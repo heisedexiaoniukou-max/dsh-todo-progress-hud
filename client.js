@@ -180,19 +180,18 @@ window.__ModuleLoader__.load({
   color: var(--dsw-alias-label-primary);
   cursor: pointer;
   user-select: none;
-  border: 1px solid var(--dsw-alias-border-l1);
-  border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 35%, rgba(255, 255, 255, .55));
-  background: var(--dsw-alias-bg-overlay);
+  border: 1px solid transparent;
   background: var(--dsw-alias-bg-overlay);
   background:
+    radial-gradient(140% 120% at 14% 0%, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 46%),
     linear-gradient(180deg,
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 58%, transparent),
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 40%, transparent));
-  backdrop-filter: blur(24px) saturate(1.7);
-  -webkit-backdrop-filter: blur(24px) saturate(1.7);
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 50%, transparent),
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 32%, transparent));
+  backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
+  -webkit-backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .4),
-    inset 0 -1px 0 rgba(255, 255, 255, .06),
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset 0 -8px 14px -10px rgba(0, 0, 0, .35),
     0 10px 28px rgba(0, 0, 0, .16);
   transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease;
 }
@@ -202,7 +201,29 @@ window.__ModuleLoader__.load({
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 45%);
+  background:
+    radial-gradient(90% 70% at 18% -20%, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+/* The rim: a 1px gradient ring, bright on the lit edge and dim at the bottom,
+   so the capsule reads as a refracting pane instead of a filled plate. */
+.tp-card::after,
+.tp-pill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(150deg,
+    rgba(255, 255, 255, .85) 0%,
+    rgba(255, 255, 255, .18) 30%,
+    rgba(255, 255, 255, .06) 62%,
+    rgba(255, 255, 255, .5) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
   pointer-events: none;
 }
 .tp-card:hover,
@@ -396,19 +417,18 @@ window.__ModuleLoader__.load({
   font-size: calc(var(--dsh-content-font-size, 14px) - 3px);
   line-height: 1;
   color: var(--dsw-alias-label-secondary);
-  border: 1px solid var(--dsw-alias-border-l1);
-  border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 35%, rgba(255, 255, 255, .55));
-  background: var(--dsw-alias-bg-overlay);
+  border: 1px solid transparent;
   background: var(--dsw-alias-bg-overlay);
   background:
+    radial-gradient(140% 120% at 14% 0%, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 46%),
     linear-gradient(180deg,
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 58%, transparent),
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 40%, transparent));
-  backdrop-filter: blur(24px) saturate(1.7);
-  -webkit-backdrop-filter: blur(24px) saturate(1.7);
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 50%, transparent),
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 32%, transparent));
+  backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
+  -webkit-backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .4),
-    inset 0 -1px 0 rgba(255, 255, 255, .06),
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset 0 -8px 14px -10px rgba(0, 0, 0, .35),
     0 10px 28px rgba(0, 0, 0, .16);
   animation: tp-run-in .22s ease-out;
 }
