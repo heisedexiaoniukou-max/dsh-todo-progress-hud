@@ -16,7 +16,7 @@ window.__ModuleLoader__.load({
     const h = React.createElement;
     const NS = 'todoProgress';
     const EMPTY = Object.freeze([]);
-    const FALLBACK = { label: '任务进度', done: '全部完成', failed: '失败', collapse: '折叠', expand: '展开' };
+    const FALLBACK = { label: '任务', done: '全部完成', failed: '失败', collapse: '折叠', expand: '展开' };
     const STORAGE_KEY = 'todo-progress-hud:collapsed';
     const MOTION_KEY = 'todo-progress-hud:motion';
     /** A todo node marked with these leading glyphs is rendered as failed. */
@@ -427,8 +427,8 @@ window.__ModuleLoader__.load({
       ctx.effect(
         () =>
           ctx.locale.register(NS, {
-            zh: { label: '任务进度', done: '全部完成', failed: '失败', collapse: '折叠', expand: '展开' },
-            en: { label: 'TASKS', done: 'ALL DONE', failed: 'failed', collapse: 'collapse', expand: 'expand' },
+            zh: { label: '任务', done: '全部完成', failed: '失败', collapse: '折叠', expand: '展开' },
+            en: { label: 'Tasks', done: 'all done', failed: 'failed', collapse: 'collapse', expand: 'expand' },
           }),
         'todo-progress-hud: dictionaries',
       );
