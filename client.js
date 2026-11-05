@@ -21,6 +21,7 @@ window.__ModuleLoader__.load({
     const EMPTY = Object.freeze([]);
     const FALLBACK = { label: '任务进度', done: '全部完成', failed: '失败', collapse: '折叠', expand: '展开' };
     const STORAGE_KEY = 'todo-progress-hud:collapsed';
+    const MOTION_KEY = 'todo-progress-hud:motion';
     /** A todo node marked with these leading glyphs is rendered as failed. */
     const FAILED_MARKER = /^[\s]*[⚠✗❌]/u;
 
@@ -154,42 +155,102 @@ window.__ModuleLoader__.load({
   to   { background-position: 200% 50%; }
 }
 
-/* ---- collapsed ring ---- */
-.tp-orb {
+/* ---- collapsed pill: horizontal mini bar + node lights ---- */
+.tp-pill {
   pointer-events: auto;
   margin-top: 10px;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  --tp-accent: var(--dsw-alias-brand-primary);
-  background: conic-gradient(var(--tp-accent) var(--tp-deg, 0deg), var(--dsw-alias-bg-layer-2) 0deg);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
-  animation: tp-orb-in .28s cubic-bezier(.34, 1.4, .64, 1);
-  transition: transform .18s ease;
-}
-.tp-orb:hover { transform: scale(1.08); }
-.tp-orb:active { transform: scale(.96); }
-.tp-orb[data-failed="true"] { --tp-accent: var(--dsw-alias-state-error-primary); }
-.tp-orb-inner {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin: 4px;
-  border-radius: 50%;
+  gap: 8px;
+  padding: 6px 11px;
+  border-radius: 999px;
   background: var(--dsw-alias-bg-overlay);
-  font-size: 10px;
-  font-weight: 600;
+  border: 1px solid var(--dsw-alias-border-l1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  user-select: none;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 1;
+  will-change: transform;
+  animation: tp-pill-in .32s cubic-bezier(.34, 1.4, .64, 1);
+  transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.tp-pill:hover { transform: translateY(1px) scale(1.03); box-shadow: 0 8px 24px rgba(0, 0, 0, .22); }
+.tp-pill:active { transform: scale(.97); }
+.tp-pill[data-failed="true"] { border-color: var(--dsw-alias-state-error-primary); }
+.tp-pill[data-leaving="true"] { animation: tp-pill-out .16s ease-in forwards; }
+
+.tp-pill-track {
+  position: relative;
+  width: 54px;
+  height: 5px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--dsw-alias-bg-layer-2);
+  overflow: hidden;
+}
+.tp-pill-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+  background-image: linear-gradient(90deg, var(--dsw-alias-brand-primary), var(--dsw-alias-state-success-primary));
+  background-size: 200% 100%;
+  transition: width .55s cubic-bezier(.22, 1, .36, 1);
+  animation: tp-drift 2.4s linear infinite;
+}
+.tp-pill-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, .5) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: tp-sheen 2.2s ease-in-out infinite;
+}
+.tp-pill-nodes { display: flex; align-items: center; gap: 4px; }
+.tp-pill-node {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.2px solid var(--dsw-alias-state-idle-primary);
+  background: transparent;
+  transition: background .25s ease, border-color .25s ease;
+}
+.tp-pill-node[data-status="completed"] {
+  background: var(--dsw-alias-state-success-primary);
+  border-color: var(--dsw-alias-state-success-primary);
+  animation: tp-twinkle 2.6s ease-in-out infinite;
+  animation-delay: var(--tp-delay, 0ms);
+}
+.tp-pill-node[data-status="in_progress"] {
+  background: var(--dsw-alias-brand-primary);
+  border-color: var(--dsw-alias-brand-primary);
+  animation: tp-breathe 2.1s ease-in-out infinite;
+}
+.tp-pill-node[data-status="failed"] {
+  background: var(--dsw-alias-state-error-primary);
+  border-color: var(--dsw-alias-state-error-primary);
+}
+.tp-pill-count {
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
   color: var(--dsw-alias-label-secondary);
 }
-@keyframes tp-orb-in {
-  from { opacity: 0; transform: scale(.6); }
-  to   { opacity: 1; transform: scale(1); }
+.tp-pill[data-complete="true"] .tp-pill-count { color: var(--dsw-alias-state-success-primary); }
+@keyframes tp-pill-in {
+  0%   { opacity: 0; transform: scale(.72) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes tp-pill-out {
+  0%   { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(.7) translateY(-4px); }
+}
+@keyframes tp-card-out {
+  0%   { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(.72) translateY(-6px); }
 }
 
 /* ---- expanded card ---- */
@@ -222,6 +283,7 @@ window.__ModuleLoader__.load({
   border-color: var(--dsw-alias-state-success-primary);
   animation: tp-card-in .34s cubic-bezier(.34, 1.4, .64, 1), tp-glow 1.1s ease-out 1;
 }
+.tp-card[data-leaving="true"] { animation: tp-card-out .16s ease-in forwards; }
 .tp-card[data-failed="true"] {
   border-color: var(--dsw-alias-state-error-primary);
   animation: tp-card-in .34s cubic-bezier(.34, 1.4, .64, 1), tp-shake .45s ease-in-out 1;
@@ -301,6 +363,8 @@ window.__ModuleLoader__.load({
 .tp-node[data-status="completed"] {
   background: var(--dsw-alias-state-success-primary);
   border-color: var(--dsw-alias-state-success-primary);
+  animation: tp-pop .42s cubic-bezier(.34, 1.6, .64, 1), tp-twinkle 2.6s ease-in-out infinite;
+  animation-delay: var(--tp-delay, 0ms), calc(var(--tp-delay, 0ms) + 500ms);
 }
 .tp-node[data-status="completed"]::before {
   content: '';
@@ -354,6 +418,10 @@ window.__ModuleLoader__.load({
   0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, .45); }
   50%      { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0); }
 }
+@keyframes tp-twinkle {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); opacity: .9; }
+  50%      { box-shadow: 0 0 7px 1px rgba(34, 197, 94, .5); opacity: 1; }
+}
 @keyframes tp-bump {
   0%   { transform: scale(1); }
   45%  { transform: scale(1.22); }
@@ -383,13 +451,23 @@ window.__ModuleLoader__.load({
 .tp-card:hover .tp-chevron { transform: translateY(-1px); }
 
 @media (prefers-reduced-motion: reduce) {
-  .tp-card, .tp-orb, .tp-card:hover, .tp-orb:hover,
-  .tp-node, .tp-node::after, .tp-node::before, .tp-fill::after,
-  .tp-edge-fill, .tp-orb-inner, .tp-chevron, .tp-count {
+  :root:not([data-tp-motion="full"]) .tp-card,
+  :root:not([data-tp-motion="full"]) .tp-pill,
+  :root:not([data-tp-motion="full"]) .tp-pill-node,
+  :root:not([data-tp-motion="full"]) .tp-pill-fill,
+  :root:not([data-tp-motion="full"]) .tp-pill-fill::after,
+  :root:not([data-tp-motion="full"]) .tp-node,
+  :root:not([data-tp-motion="full"]) .tp-node::before,
+  :root:not([data-tp-motion="full"]) .tp-node::after,
+  :root:not([data-tp-motion="full"]) .tp-fill::after,
+  :root:not([data-tp-motion="full"]) .tp-edge-fill,
+  :root:not([data-tp-motion="full"]) .tp-chevron,
+  :root:not([data-tp-motion="full"]) .tp-count {
     animation: none !important;
   }
-  .tp-fill { transition: width .25s ease; }
-  .tp-node { transition: background .25s ease, border-color .25s ease; }
+  :root:not([data-tp-motion="full"]) .tp-fill { transition: width .25s ease; }
+  :root:not([data-tp-motion="full"]) .tp-node,
+  :root:not([data-tp-motion="full"]) .tp-pill-node { transition: background .25s ease, border-color .25s ease; }
 }
 `;
     //#endregion
@@ -403,6 +481,20 @@ window.__ModuleLoader__.load({
       const t = props.t;
       const tr = (key) => (typeof t === 'function' ? t(key) : (FALLBACK[key] ?? key));
       const { todos, title } = useSnapshot();
+
+      // Opt-in escape hatch for hosts whose OS asks for reduced motion but who still
+      // want the full effect: localStorage['todo-progress-hud:motion'] = 'full'.
+      React.useEffect(() => {
+        let full = false;
+        try {
+          full = window.localStorage.getItem(MOTION_KEY) === 'full';
+        } catch {
+          /* storage unavailable */
+        }
+        if (full) document.documentElement.dataset.tpMotion = 'full';
+        else delete document.documentElement.dataset.tpMotion;
+      }, []);
+
       const list = todos || EMPTY;
       const total = list.length;
 
@@ -419,11 +511,22 @@ window.__ModuleLoader__.load({
       const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
       const [collapsed, setCollapsed] = React.useState(readCollapsed);
+      const [leaving, setLeaving] = React.useState(false);
+      const busy = React.useRef(false);
+      // Play a short exit animation on the current shape, then swap and let the
+      // incoming shape play its entrance: collapse/expand is a morph, not a jump.
       const toggle = React.useCallback(() => {
-        setCollapsed((value) => {
-          writeCollapsed(!value);
-          return !value;
-        });
+        if (busy.current) return;
+        busy.current = true;
+        setLeaving(true);
+        window.setTimeout(() => {
+          setCollapsed((value) => {
+            writeCollapsed(!value);
+            return !value;
+          });
+          setLeaving(false);
+          busy.current = false;
+        }, 150);
       }, []);
 
       // The HUD stays visible for as long as the conversation owns a todo list,
@@ -447,21 +550,39 @@ window.__ModuleLoader__.load({
         h('div', { className: 'tp-edge-fill', style: { width: pct + '%' } }),
       );
 
+      const miniNodes = list.map((item, index) => {
+        const isFailed = !!item && FAILED_MARKER.test(item.content || '');
+        const status = isFailed ? 'failed' : (item && item.status) || 'pending';
+        return h('span', {
+          key: 'mini:' + index + ':' + status,
+          className: 'tp-pill-node',
+          'data-status': status,
+          style: { ['--tp-delay']: (index * 120) + 'ms' },
+        });
+      });
+
       const body = collapsed
         ? h(
             'button',
             {
-              key: 'tp-orb',
+              key: 'tp-pill',
               type: 'button',
-              className: 'tp-orb',
+              className: 'tp-pill',
               'data-failed': edgeFailed ? 'true' : 'false',
-              style: { '--tp-deg': (pct * 3.6).toFixed(1) + 'deg' },
+              'data-complete': complete ? 'true' : 'false',
+              'data-leaving': leaving ? 'true' : 'false',
               title: summary + failedCount + ' · ' + tr('expand'),
               'aria-label': summary + failedCount,
               'aria-expanded': false,
               onClick: toggle,
             },
-            h('span', { className: 'tp-orb-inner' }, pct + '%'),
+            h(
+              'div',
+              { className: 'tp-pill-track' },
+              h('div', { className: 'tp-pill-fill', style: { width: pct + '%' } }),
+            ),
+            h('div', { className: 'tp-pill-nodes' }, miniNodes),
+            h('span', { className: 'tp-pill-count' }, complete ? '\u2713' : done + '/' + total),
           )
         : h(
             'div',
@@ -472,6 +593,7 @@ window.__ModuleLoader__.load({
               tabIndex: 0,
               'data-complete': complete ? 'true' : 'false',
               'data-failed': edgeFailed ? 'true' : 'false',
+              'data-leaving': leaving ? 'true' : 'false',
               title: summary + failedCount + ' · ' + tr('collapse'),
               'aria-label': summary + failedCount,
               'aria-expanded': true,
