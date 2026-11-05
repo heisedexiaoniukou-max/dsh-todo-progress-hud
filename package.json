@@ -1,14 +1,18 @@
 {
   "name": "dsh-todo-progress-hud",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "type": "module",
-  "description": "Floating task-progress HUD for DeepSeek Harness: a top progress bar with milestone lights that follows the session todo list.",
+  "description": "任务进度条 for DeepSeek Harness：把会话的 todo 清单变成输入框上方一条常驻进度条，实时显示完成度、当前步骤与每一项状态。",
   "keywords": [
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
     "todo",
+    "todo-list",
     "progress",
+    "progress-bar",
+    "task",
+    "task-tracking",
     "hud",
     "ui"
   ],
@@ -41,11 +45,15 @@
     "dsh": ">=0.2.0"
   },
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "platform": "web",
       "immediately": true,
-      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
     }
   }
 }
