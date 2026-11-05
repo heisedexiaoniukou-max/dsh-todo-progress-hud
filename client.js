@@ -435,6 +435,9 @@ window.__ModuleLoader__.load({
   pointer-events: none;
 }
 [data-chat-running] [class*="runningDivider"] { display: none !important; }
+/* TextShimmer paints a cloned label inside an absolutely positioned decoration
+   layer; over the glass pill it shows up as a ghost double, so drop it. */
+[data-chat-running] [class*="decoration"] { display: none !important; }
 [data-chat-running] [class*="runningIcon"] {
   position: relative;
   display: inline-flex;
@@ -465,6 +468,10 @@ window.__ModuleLoader__.load({
 
     /** Drop the trailing "···" the built-in label appends, keeping the pill tidy. */
     function trimRunningEllipsis() {
+      for (const el of document.querySelectorAll('[data-chat-running] [data-shimmer-text]')) {
+        const next = el.getAttribute('data-shimmer-text').replace(/\s*·{3}\s*$/, '');
+        if (next !== el.getAttribute('data-shimmer-text')) el.setAttribute('data-shimmer-text', next);
+      }
       const nodes = document.querySelectorAll('[data-chat-running] [class*="runningText"]');
       for (const node of nodes) {
         const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
