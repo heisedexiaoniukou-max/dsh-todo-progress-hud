@@ -28,7 +28,7 @@ DSH 的 `todo_write` 会在会话里维护一份任务清单，但进度只藏�
 通过 GitHub 安装（推荐，锁定提交更可复现）：
 
 ```sh
-dsh plugin --profile web add github:heisedexiaoniukou-max/dsh-todo-progress-hud#<commit-sha>
+dsh plugin --profile web add github:heisedexiaoniukou-max/dsh-todo-progress-hud#v1.0.0
 ```
 
 跟随默认分支：
