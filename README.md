@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/heisedexiaoniukou-max/dsh-todo-progress-hud/releases"><img alt="version" src="https://img.shields.io/badge/version-2.0.2-4f6df5?style=flat-square"></a>
+  <a href="https://github.com/heisedexiaoniukou-max/dsh-todo-progress-hud/releases"><img alt="version" src="https://img.shields.io/badge/version-2.1.0-4f6df5?style=flat-square"></a>
   <img alt="DSH" src="https://img.shields.io/badge/DeepSeek%20Harness-%E2%89%A50.2.0-0f1115?style=flat-square">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-10a37f?style=flat-square">
   <img alt="platform" src="https://img.shields.io/badge/platform-Web%20%2F%20Desktop-6b7280?style=flat-square">
@@ -44,7 +44,7 @@ Agent 跑长任务时会用 `todo_write` 维护一份清单，但这份清单躺
 ● 实现 todos 投影的读写与缓存
 ● 接入输入框上方的任务条组件
 ○ 补充暗色主题与减弱动画适配
-○ 回归测试并发布 v2.0.2
+○ 回归测试并发布 v2.1.0
 ```
 
 头部永远可见，展开后是完整清单。点一下整条折叠，再点展开：
@@ -71,10 +71,10 @@ Agent 跑长任务时会用 `todo_write` 维护一份清单，但这份清单躺
 dsh plugin --profile web add github:heisedexiaoniukou-max/dsh-todo-progress-hud
 ```
 
-锁定版本（推荐，当前最新 `v2.0.2`）：
+锁定版本（推荐，当前最新 `v2.1.0`）：
 
 ```sh
-dsh plugin --profile web add github:heisedexiaoniukou-max/dsh-todo-progress-hud#v2.0.2
+dsh plugin --profile web add github:heisedexiaoniukou-max/dsh-todo-progress-hud#v2.1.0
 ```
 
 从本地目录安装（开发调试）：

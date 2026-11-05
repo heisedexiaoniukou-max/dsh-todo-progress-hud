@@ -455,7 +455,8 @@ window.__ModuleLoader__.load({
      * @param ctx - Client root context.
      */
     /** Build marker: lets the browser tell which bundle it actually loaded. */
-    const BUILD = '1.7.4';
+    /** Keep in sync with package.json: lets the browser prove which bundle it runs. */
+    const BUILD = '2.1.0';
 
     function apply(ctx) {
       if (typeof window !== 'undefined') window.__TP_HUD = { build: BUILD };
