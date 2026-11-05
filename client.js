@@ -60,11 +60,17 @@ window.__ModuleLoader__.load({
     //#region styles
     const CSS = `
 .tp-hud {
+  --tp-accent: #4f6df5;
+  --tp-accent-soft: color-mix(in srgb, var(--tp-accent) 16%, transparent);
   display: flex;
   justify-content: center;
   width: 100%;
   font-family: var(--dsw-font-family, inherit);
 }
+@media (prefers-color-scheme: dark) {
+  .tp-hud { --tp-accent: #7d92ff; }
+}
+:root[data-ds-theme="dark"] .tp-hud { --tp-accent: #7d92ff; }
 .tp-panel {
   width: 100%;
   max-width: var(--dsh-chat-content-width, 748px);
@@ -109,15 +115,16 @@ window.__ModuleLoader__.load({
   min-width: 60px;
   height: 4px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--dsw-alias-label-secondary) 18%, transparent);
+  background: color-mix(in srgb, var(--dsw-alias-label-secondary) 14%, transparent);
   overflow: hidden;
 }
 .tp-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--dsw-alias-brand-primary), var(--dsw-alias-state-success-primary));
+  background: var(--tp-accent);
   transition: width .6s cubic-bezier(.3, .9, .35, 1);
 }
+.tp-panel[data-complete="true"] .tp-fill { background: var(--dsw-alias-state-success-primary); }
 .tp-count {
   flex: none;
   font-variant-numeric: tabular-nums;
@@ -159,7 +166,7 @@ window.__ModuleLoader__.load({
   width: .5em;
   height: .5em;
   border-radius: 50%;
-  border: 1.2px solid var(--dsw-alias-state-idle-primary);
+  border: 1.2px solid color-mix(in srgb, var(--dsw-alias-label-secondary) 45%, transparent);
   background: transparent;
   transform: translateY(-1px);
   transition: background .3s ease, border-color .3s ease;
@@ -169,8 +176,9 @@ window.__ModuleLoader__.load({
   border-color: var(--dsw-alias-state-success-primary);
 }
 .tp-item[data-status="in_progress"] .tp-dot {
-  background: var(--dsw-alias-brand-primary);
-  border-color: var(--dsw-alias-brand-primary);
+  background: var(--tp-accent);
+  border-color: var(--tp-accent);
+  box-shadow: 0 0 0 3px var(--tp-accent-soft);
 }
 .tp-item[data-status="failed"] .tp-dot {
   background: var(--dsw-alias-state-error-primary);
