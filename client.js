@@ -134,114 +134,57 @@ window.__ModuleLoader__.load({
     //#region styles
     const CSS = `
 .tp-hud {
-  position: fixed;
-  right: 16px;
-  bottom: calc(var(--dsh-composer-height, 152px) + 16px);
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  pointer-events: none;
+  display: block;
+  width: 100%;
   font-family: var(--dsw-font-family, inherit);
 }
-/* ---- liquid glass surface shared by the card and the collapsed pill ---- */
+/* One flat row that lives in the composer dock: no shadow, no glass, no float. */
 .tp-card,
 .tp-pill {
   pointer-events: auto;
-  position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  width: fit-content;
-  max-width: min(640px, calc(100vw - 40px));
-  padding: .55em .95em;
-  border-radius: 999px;
+  gap: .7em;
+  width: 100%;
+  padding: .45em .8em;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, .06));
+  color: var(--dsw-alias-label-secondary);
   font-size: calc(var(--dsh-content-font-size, 14px) - 2px);
-  line-height: 1;
-  color: var(--dsw-alias-label-primary);
+  line-height: 1.3;
   cursor: pointer;
   user-select: none;
-  border: 1px solid transparent;
-  background: var(--dsw-alias-bg-overlay);
-  background:
-    radial-gradient(140% 120% at 14% 0%, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 46%),
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 50%, transparent),
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 32%, transparent));
-  backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
-  -webkit-backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .55),
-    0 4px 14px rgba(0, 0, 0, .08);
-  transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease;
-}
-.tp-card::before,
-.tp-pill::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(90% 70% at 18% -20%, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, 0) 55%);
-  pointer-events: none;
-}
-/* The rim: a 1px gradient ring, bright on the lit edge and dim at the bottom,
-   so the capsule reads as a refracting pane instead of a filled plate. */
-.tp-card::after,
-.tp-pill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(150deg,
-    rgba(255, 255, 255, .85) 0%,
-    rgba(255, 255, 255, .18) 30%,
-    rgba(255, 255, 255, .06) 62%,
-    rgba(255, 255, 255, .5) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
+  transition: background .16s ease, border-color .16s ease;
 }
 .tp-card:hover,
-.tp-pill:hover {
-  transform: translateY(1px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .55),
-    0 6px 18px rgba(0, 0, 0, .1);
-}
-.tp-card:active,
-.tp-pill:active { transform: translateY(2px); }
+.tp-pill:hover { border-color: var(--dsw-alias-border-l2, var(--dsw-alias-border-l1)); }
 .tp-card[data-complete="true"],
-.tp-pill[data-complete="true"] { border-color: var(--dsw-alias-state-success-primary); }
+.tp-pill[data-complete="true"] { border-color: color-mix(in srgb, var(--dsw-alias-state-success-primary) 55%, var(--dsw-alias-border-l1)); }
 .tp-card[data-failed="true"],
-.tp-pill[data-failed="true"] { border-color: var(--dsw-alias-state-error-primary); }
-.tp-card { gap: .7em; animation: tp-card-in .22s ease-out; }
-.tp-card[data-leaving="true"] { animation: tp-card-out .14s ease-in forwards; }
+.tp-pill[data-failed="true"] { border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 55%, var(--dsw-alias-border-l1)); }
+.tp-card { animation: tp-card-in .18s ease-out; }
+.tp-card[data-leaving="true"] { animation: tp-card-out .12s ease-in forwards; }
+.tp-pill { animation: tp-pill-in .18s ease-out; }
+.tp-pill[data-leaving="true"] { animation: tp-pill-out .12s ease-in forwards; }
 
-/* ---- expanded card contents ---- */
 .tp-title {
-  font-weight: 600;
-  white-space: nowrap;
-  max-width: 13em;
+  flex: none;
+  max-width: 11em;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--dsw-alias-label-primary);
+  font-weight: 500;
 }
-.tp-sep {
-  width: 1px;
-  height: 1em;
-  background: color-mix(in srgb, var(--dsw-alias-border-l1) 80%, transparent);
-}
+.tp-title[data-empty="true"] { color: var(--dsw-alias-label-tertiary); font-weight: 400; }
 .tp-track {
   position: relative;
-  flex: 0 1 10em;
-  min-width: 4.5em;
-  height: .36em;
+  flex: 1 1 auto;
+  min-width: 60px;
+  height: 4px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--dsw-alias-label-secondary) 20%, transparent);
+  background: color-mix(in srgb, var(--dsw-alias-label-secondary) 18%, transparent);
   overflow: hidden;
 }
 .tp-fill {
@@ -251,58 +194,33 @@ window.__ModuleLoader__.load({
   transition: width .6s cubic-bezier(.3, .9, .35, 1);
 }
 .tp-count {
+  flex: none;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
   color: var(--dsw-alias-label-secondary);
   transition: color .3s ease;
 }
 .tp-count[data-complete="true"] { color: var(--dsw-alias-state-success-primary); font-weight: 600; }
-.tp-nodes { display: inline-flex; align-items: center; gap: .4em; }
-.tp-node {
-  width: .6em;
-  height: .6em;
-  border-radius: 50%;
-  border: 1.2px solid var(--dsw-alias-state-idle-primary);
-  background: transparent;
-  transition: background .35s ease, border-color .35s ease, box-shadow .35s ease;
-}
-.tp-node[data-status="completed"] {
-  background: var(--dsw-alias-state-success-primary);
-  border-color: var(--dsw-alias-state-success-primary);
-}
-.tp-node[data-status="in_progress"] {
-  background: var(--dsw-alias-brand-primary);
-  border-color: var(--dsw-alias-brand-primary);
-  box-shadow: 0 0 0 .22em color-mix(in srgb, var(--dsw-alias-brand-primary) 20%, transparent);
-}
-.tp-node[data-status="failed"] {
-  background: var(--dsw-alias-state-error-primary);
-  border-color: var(--dsw-alias-state-error-primary);
-}
 .tp-current {
-  max-width: 12em;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-alias-label-tertiary);
 }
-.tp-chevron { color: var(--dsw-alias-label-secondary); opacity: .5; font-size: .85em; }
-.tp-card:hover .tp-chevron { opacity: .8; }
-
-/* ---- collapsed pill contents ---- */
-.tp-pill {
-  gap: .6em;
-  padding: .5em .8em;
-  font-size: calc(var(--dsh-content-font-size, 14px) - 3px);
-  animation: tp-pill-in .24s cubic-bezier(.34, 1.3, .64, 1);
+.tp-chevron {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: .9em;
+  transition: transform .2s ease;
 }
-.tp-pill[data-leaving="true"] { animation: tp-pill-out .14s ease-in forwards; }
 .tp-pill-track {
   position: relative;
-  width: 3.4em;
-  height: .32em;
+  flex: 1 1 auto;
+  min-width: 60px;
+  height: 4px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--dsw-alias-label-secondary) 20%, transparent);
+  background: color-mix(in srgb, var(--dsw-alias-label-secondary) 18%, transparent);
   overflow: hidden;
 }
 .tp-pill-fill {
@@ -311,49 +229,31 @@ window.__ModuleLoader__.load({
   background: linear-gradient(90deg, var(--dsw-alias-brand-primary), var(--dsw-alias-state-success-primary));
   transition: width .6s cubic-bezier(.3, .9, .35, 1);
 }
-.tp-pill-nodes { display: inline-flex; align-items: center; gap: .28em; }
-.tp-pill-node {
-  width: .44em;
-  height: .44em;
-  border-radius: 50%;
-  border: 1px solid var(--dsw-alias-state-idle-primary);
-  background: transparent;
-  transition: background .2s ease, border-color .2s ease;
-}
-.tp-pill-node[data-status="completed"] {
-  background: var(--dsw-alias-state-success-primary);
-  border-color: var(--dsw-alias-state-success-primary);
-}
-.tp-pill-node[data-status="in_progress"] {
-  background: var(--dsw-alias-brand-primary);
-  border-color: var(--dsw-alias-brand-primary);
-}
-.tp-pill-node[data-status="failed"] {
-  background: var(--dsw-alias-state-error-primary);
-  border-color: var(--dsw-alias-state-error-primary);
-}
 .tp-pill-count {
+  flex: none;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--dsw-alias-label-secondary);
 }
 .tp-pill[data-complete="true"] .tp-pill-count { color: var(--dsw-alias-state-success-primary); }
+.tp-pill .tp-count,
+.tp-card .tp-count { margin-left: 0; }
 
 @keyframes tp-card-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 @keyframes tp-card-out {
-  from { opacity: 1; transform: none; }
-  to   { opacity: 0; transform: scale(.94); }
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 @keyframes tp-pill-in {
-  from { opacity: 0; transform: translateY(-4px) scale(.94); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 @keyframes tp-pill-out {
-  from { opacity: 1; transform: none; }
-  to   { opacity: 0; transform: scale(.9); }
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-tp-motion="full"]) .tp-card,
@@ -533,16 +433,6 @@ window.__ModuleLoader__.load({
       const edgeFailed = failed > 0;
 
       const styleEl = h('style', { key: 'tp-style' }, CSS);
-      const miniNodes = list.map((item, index) => {
-        const isFailed = !!item && FAILED_MARKER.test(item.content || '');
-        const status = isFailed ? 'failed' : (item && item.status) || 'pending';
-        return h('span', {
-          key: 'mini:' + index + ':' + status,
-          className: 'tp-pill-node',
-          'data-status': status,
-        });
-      });
-
       const body = collapsed
         ? h(
             'button',
@@ -563,7 +453,6 @@ window.__ModuleLoader__.load({
               { className: 'tp-pill-track' },
               h('div', { className: 'tp-pill-fill', style: { width: pct + '%' } }),
             ),
-            h('div', { className: 'tp-pill-nodes' }, miniNodes),
             h('span', { className: 'tp-pill-count' }, complete ? '\u2713' : done + '/' + total),
           )
         : h(
@@ -592,7 +481,6 @@ window.__ModuleLoader__.load({
               { className: 'tp-title', 'data-empty': titleText ? 'false' : 'true' },
               titleText || tr('label'),
             ),
-            h('span', { className: 'tp-sep' }),
             h(
               'div',
               {
@@ -608,20 +496,6 @@ window.__ModuleLoader__.load({
               'span',
               { key: 'count:' + pct, className: 'tp-count', 'data-complete': complete ? 'true' : 'false' },
               complete ? tr('done') : done + '/' + total,
-            ),
-            h(
-              'div',
-              { className: 'tp-nodes' },
-              list.map((item, index) => {
-                const isFailed = !!item && FAILED_MARKER.test(item.content || '');
-                const status = isFailed ? 'failed' : (item && item.status) || 'pending';
-                return h('span', {
-                  key: index + ':' + status,
-                  className: 'tp-node',
-                  'data-status': status,
-                  title: (item && item.content) || '',
-                });
-              }),
             ),
             complete
               ? null
@@ -701,12 +575,12 @@ window.__ModuleLoader__.load({
           TodoBridge,
         ),
       );
-      ctx.slots.inject('shell.overlay', () =>
+      ctx.slots.inject('conversation.input.dock', () =>
         ctx.slots.register(
           {
-            name: 'shell.overlay',
+            name: 'conversation.input.dock',
             id: 'todo-progress-hud',
-            order: 900,
+            order: 5,
             locale: NS,
           },
           TodoHud,
