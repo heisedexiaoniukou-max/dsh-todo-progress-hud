@@ -35,6 +35,22 @@ window.__ModuleLoader__.load({
      * bridge would publish an empty list and blank the HUD in the new conversation.
      */
     let activeBridge = null;
+    /**
+     * Host semantics: the `todos` projection resets to null on every `turn/start`.
+     * Remember the last list each session actually wrote so the HUD survives the
+     * gap between a new turn starting and that turn's first `todo_write`.
+     */
+    const lastKnownTodos = new Map();
+
+    function rememberTodos(sessionId, todos) {
+      if (Array.isArray(todos)) {
+        if (todos.length === 0) lastKnownTodos.delete(sessionId);
+        else lastKnownTodos.set(sessionId, todos);
+        return todos;
+      }
+      const cached = lastKnownTodos.get(sessionId);
+      return Array.isArray(cached) ? cached : null;
+    }
 
     function publish(todos, title, sessionId) {
       const nextTodos = Array.isArray(todos) ? todos : EMPTY;
@@ -108,7 +124,7 @@ window.__ModuleLoader__.load({
 
       // Publish projection updates only while this bridge owns the snapshot.
       React.useEffect(() => {
-        if (activeBridge === token.current) publish(todos, title, sessionId);
+        if (activeBridge === token.current) publish(rememberTodos(sessionId, todos), title, sessionId);
       }, [todos, title, sessionId]);
 
       return null;
@@ -167,10 +183,11 @@ window.__ModuleLoader__.load({
   border: 1px solid var(--dsw-alias-border-l1);
   border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 55%, rgba(255, 255, 255, .5));
   background: var(--dsw-alias-bg-overlay);
+  background: var(--dsw-alias-bg-overlay);
   background:
     linear-gradient(180deg,
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 76%, rgba(255, 255, 255, .22)),
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 88%, transparent));
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 90%, rgba(255, 255, 255, .12)),
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 96%, transparent));
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   box-shadow:
@@ -382,10 +399,11 @@ window.__ModuleLoader__.load({
   border: 1px solid var(--dsw-alias-border-l1);
   border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 55%, rgba(255, 255, 255, .5));
   background: var(--dsw-alias-bg-overlay);
+  background: var(--dsw-alias-bg-overlay);
   background:
     linear-gradient(180deg,
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 76%, rgba(255, 255, 255, .22)),
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 88%, transparent));
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 90%, rgba(255, 255, 255, .12)),
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 96%, transparent));
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   box-shadow:
