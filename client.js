@@ -181,15 +181,15 @@ window.__ModuleLoader__.load({
   cursor: pointer;
   user-select: none;
   border: 1px solid var(--dsw-alias-border-l1);
-  border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 55%, rgba(255, 255, 255, .5));
+  border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 35%, rgba(255, 255, 255, .55));
   background: var(--dsw-alias-bg-overlay);
   background: var(--dsw-alias-bg-overlay);
   background:
     linear-gradient(180deg,
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 90%, rgba(255, 255, 255, .12)),
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 96%, transparent));
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 58%, transparent),
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 40%, transparent));
+  backdrop-filter: blur(24px) saturate(1.7);
+  -webkit-backdrop-filter: blur(24px) saturate(1.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .4),
     inset 0 -1px 0 rgba(255, 255, 255, .06),
@@ -397,15 +397,15 @@ window.__ModuleLoader__.load({
   line-height: 1;
   color: var(--dsw-alias-label-secondary);
   border: 1px solid var(--dsw-alias-border-l1);
-  border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 55%, rgba(255, 255, 255, .5));
+  border-color: color-mix(in srgb, var(--dsw-alias-border-l1) 35%, rgba(255, 255, 255, .55));
   background: var(--dsw-alias-bg-overlay);
   background: var(--dsw-alias-bg-overlay);
   background:
     linear-gradient(180deg,
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 90%, rgba(255, 255, 255, .12)),
-      color-mix(in srgb, var(--dsw-alias-bg-overlay) 96%, transparent));
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 58%, transparent),
+      color-mix(in srgb, var(--dsw-alias-bg-overlay) 40%, transparent));
+  backdrop-filter: blur(24px) saturate(1.7);
+  -webkit-backdrop-filter: blur(24px) saturate(1.7);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .4),
     inset 0 -1px 0 rgba(255, 255, 255, .06),
