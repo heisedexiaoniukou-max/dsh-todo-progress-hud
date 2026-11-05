@@ -132,7 +132,7 @@ window.__ModuleLoader__.load({
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 3px;
   background: var(--dsw-alias-bg-layer-2);
   overflow: hidden;
   pointer-events: none;
@@ -143,7 +143,8 @@ window.__ModuleLoader__.load({
   background: linear-gradient(90deg, var(--dsw-alias-brand-primary), var(--dsw-alias-state-success-primary));
   background-size: 200% 100%;
   transition: width .55s cubic-bezier(.22, 1, .36, 1);
-  animation: tp-drift 3.2s linear infinite;
+  animation: tp-drift 2.4s linear infinite;
+  box-shadow: 0 0 10px rgba(99, 102, 241, .55);
 }
 .tp-edge[data-failed="true"] .tp-edge-fill {
   background: linear-gradient(90deg, var(--dsw-alias-state-error-primary), var(--dsw-alias-state-warn-primary));
@@ -221,7 +222,10 @@ window.__ModuleLoader__.load({
   border-color: var(--dsw-alias-state-success-primary);
   animation: tp-card-in .34s cubic-bezier(.34, 1.4, .64, 1), tp-glow 1.1s ease-out 1;
 }
-.tp-card[data-failed="true"] { border-color: var(--dsw-alias-state-error-primary); }
+.tp-card[data-failed="true"] {
+  border-color: var(--dsw-alias-state-error-primary);
+  animation: tp-card-in .34s cubic-bezier(.34, 1.4, .64, 1), tp-shake .45s ease-in-out 1;
+}
 @keyframes tp-card-in {
   0%   { opacity: 0; transform: translateY(-10px) scale(.95); }
   70%  { opacity: 1; transform: translateY(1px) scale(1.01); }
@@ -275,6 +279,8 @@ window.__ModuleLoader__.load({
   100% { transform: translateX(100%); }
 }
 .tp-count {
+  display: inline-block;
+  animation: tp-bump .35s ease-out;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--dsw-alias-label-secondary);
@@ -290,14 +296,26 @@ window.__ModuleLoader__.load({
   background: transparent;
   transition: background .25s ease, border-color .25s ease, transform .25s ease;
   animation: tp-pop .42s cubic-bezier(.34, 1.6, .64, 1);
+  animation-delay: var(--tp-delay, 0ms);
 }
 .tp-node[data-status="completed"] {
   background: var(--dsw-alias-state-success-primary);
   border-color: var(--dsw-alias-state-success-primary);
 }
+.tp-node[data-status="completed"]::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: var(--dsw-alias-state-success-primary);
+  opacity: 0;
+  animation: tp-burst .7s ease-out;
+}
 .tp-node[data-status="in_progress"] {
   background: var(--dsw-alias-brand-primary);
   border-color: var(--dsw-alias-brand-primary);
+  animation: tp-pop .42s cubic-bezier(.34, 1.6, .64, 1), tp-breathe 2.1s ease-in-out infinite;
+  animation-delay: var(--tp-delay, 0ms), 0ms;
 }
 .tp-node[data-status="in_progress"]::after {
   content: '';
@@ -328,6 +346,26 @@ window.__ModuleLoader__.load({
   0%   { transform: scale(.7); opacity: .9; }
   100% { transform: scale(1.7); opacity: 0; }
 }
+@keyframes tp-burst {
+  0%   { transform: scale(.5); opacity: .6; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes tp-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, .45); }
+  50%      { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0); }
+}
+@keyframes tp-bump {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+@keyframes tp-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
 .tp-current {
   max-width: 190px;
   overflow: hidden;
@@ -346,11 +384,12 @@ window.__ModuleLoader__.load({
 
 @media (prefers-reduced-motion: reduce) {
   .tp-card, .tp-orb, .tp-card:hover, .tp-orb:hover,
-  .tp-node, .tp-node::after, .tp-fill, .tp-fill::after,
-  .tp-edge-fill, .tp-orb-inner, .tp-chevron {
+  .tp-node, .tp-node::after, .tp-node::before, .tp-fill::after,
+  .tp-edge-fill, .tp-orb-inner, .tp-chevron, .tp-count {
     animation: none !important;
-    transition: none !important;
   }
+  .tp-fill { transition: width .25s ease; }
+  .tp-node { transition: background .25s ease, border-color .25s ease; }
 }
 `;
     //#endregion
@@ -463,7 +502,7 @@ window.__ModuleLoader__.load({
             ),
             h(
               'span',
-              { className: 'tp-count', 'data-complete': complete ? 'true' : 'false' },
+              { key: 'count:' + pct, className: 'tp-count', 'data-complete': complete ? 'true' : 'false' },
               complete ? tr('done') : done + '/' + total,
             ),
             h(
@@ -477,6 +516,7 @@ window.__ModuleLoader__.load({
                   className: 'tp-node',
                   'data-status': status,
                   title: (item && item.content) || '',
+                  style: { ['--tp-delay']: (index * 45) + 'ms' },
                 });
               }),
             ),
