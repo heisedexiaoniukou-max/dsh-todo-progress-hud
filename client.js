@@ -134,7 +134,8 @@ window.__ModuleLoader__.load({
     //#region styles
     const CSS = `
 .tp-hud {
-  display: block;
+  display: flex;
+  justify-content: center;
   width: 100%;
   font-family: var(--dsw-font-family, inherit);
 }
@@ -146,6 +147,7 @@ window.__ModuleLoader__.load({
   align-items: center;
   gap: .7em;
   width: 100%;
+  max-width: var(--dsh-chat-content-width, 748px);
   padding: .45em .8em;
   border-radius: 8px;
   border: 1px solid var(--dsw-alias-border-l1);
