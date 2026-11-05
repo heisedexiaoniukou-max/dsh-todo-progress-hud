@@ -190,9 +190,8 @@ window.__ModuleLoader__.load({
   backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
   -webkit-backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .5),
-    inset 0 -8px 14px -10px rgba(0, 0, 0, .35),
-    0 10px 28px rgba(0, 0, 0, .16);
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    0 4px 14px rgba(0, 0, 0, .08);
   transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease;
 }
 .tp-card::before,
@@ -230,8 +229,8 @@ window.__ModuleLoader__.load({
 .tp-pill:hover {
   transform: translateY(1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .45),
-    0 12px 30px rgba(0, 0, 0, .2);
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    0 6px 18px rgba(0, 0, 0, .1);
 }
 .tp-card:active,
 .tp-pill:active { transform: translateY(2px); }
@@ -414,9 +413,8 @@ window.__ModuleLoader__.load({
   backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
   -webkit-backdrop-filter: blur(26px) saturate(1.9) brightness(1.05);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .5),
-    inset 0 -8px 14px -10px rgba(0, 0, 0, .35),
-    0 10px 28px rgba(0, 0, 0, .16);
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    0 4px 14px rgba(0, 0, 0, .08);
   animation: tp-run-in .22s ease-out;
 }
 [data-chat-running]::after {
