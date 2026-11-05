@@ -26,14 +26,27 @@ window.__ModuleLoader__.load({
 
     //#region shared snapshot
     /** Immutable snapshot shared by both seats. */
-    let snapshot = { todos: EMPTY, title: '' };
+    let snapshot = { todos: EMPTY, title: '', sessionId: '' };
     const listeners = new Set();
+    /**
+     * The bridge currently owning the snapshot. A conversation switch can mount the
+     * next bridge before the previous one unmounts; without this guard the leaving
+     * bridge would publish an empty list and blank the HUD in the new conversation.
+     */
+    let activeBridge = null;
 
-    function publish(todos, title) {
+    function publish(todos, title, sessionId) {
       const nextTodos = Array.isArray(todos) ? todos : EMPTY;
       const nextTitle = typeof title === 'string' ? title : '';
-      if (snapshot.todos === nextTodos && snapshot.title === nextTitle) return;
-      snapshot = { todos: nextTodos, title: nextTitle };
+      const nextSessionId = typeof sessionId === 'string' ? sessionId : '';
+      if (
+        snapshot.todos === nextTodos &&
+        snapshot.title === nextTitle &&
+        snapshot.sessionId === nextSessionId
+      ) {
+        return;
+      }
+      snapshot = { todos: nextTodos, title: nextTitle, sessionId: nextSessionId };
       for (const listener of listeners) listener();
     }
 
@@ -75,12 +88,28 @@ window.__ModuleLoader__.load({
      */
     function TodoBridge(props) {
       const useProjection = props.useProjection;
+      const sessionId = props.sessionId;
       const todos = typeof useProjection === 'function' ? useProjection('todos') : null;
       const title = typeof useProjection === 'function' ? useProjection('title') : null;
+      const token = React.useRef(null);
+      if (token.current === null) token.current = {};
+
+      // Claim ownership on mount and release only if still the owner on unmount.
       React.useEffect(() => {
-        publish(todos, title);
-      }, [todos, title]);
-      React.useEffect(() => () => publish(null, null), []);
+        activeBridge = token.current;
+        return () => {
+          if (activeBridge === token.current) {
+            activeBridge = null;
+            publish(null, null, null);
+          }
+        };
+      }, []);
+
+      // Publish projection updates only while this bridge owns the snapshot.
+      React.useEffect(() => {
+        if (activeBridge === token.current) publish(todos, title, sessionId);
+      }, [todos, title, sessionId]);
+
       return null;
     }
     //#endregion
@@ -358,17 +387,10 @@ window.__ModuleLoader__.load({
         });
       }, []);
 
-      const [hidden, setHidden] = React.useState(false);
-      React.useEffect(() => {
-        if (!complete) {
-          setHidden(false);
-          return undefined;
-        }
-        const timer = setTimeout(() => setHidden(true), 8000);
-        return () => clearTimeout(timer);
-      }, [complete, total]);
-
-      if (total === 0 || hidden) return null;
+      // The HUD stays visible for as long as the conversation owns a todo list,
+      // including a fully completed one: an auto-hiding bar reads as "broken"
+      // when the next conversation opens with no visible progress.
+      if (total === 0) return null;
 
       const titleText = title && title.trim() ? title.trim() : '';
       const summary = `${titleText || tr('label')} · ${done}/${total}`;

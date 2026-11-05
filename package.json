@@ -1,6 +1,6 @@
 {
   "name": "dsh-todo-progress-hud",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Floating task-progress HUD for DeepSeek Harness: a top progress bar with milestone lights that follows the session todo list.",
   "keywords": [
