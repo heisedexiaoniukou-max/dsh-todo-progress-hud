@@ -407,6 +407,7 @@ window.__ModuleLoader__.load({
      */
     const RUNNING_CSS = `
 [data-chat-running] {
+  position: relative;
   display: inline-flex;
   align-items: center;
   width: fit-content;
@@ -431,6 +432,23 @@ window.__ModuleLoader__.load({
     inset 0 -8px 14px -10px rgba(0, 0, 0, .35),
     0 10px 28px rgba(0, 0, 0, .16);
   animation: tp-run-in .22s ease-out;
+}
+[data-chat-running]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(150deg,
+    rgba(255, 255, 255, .85) 0%,
+    rgba(255, 255, 255, .18) 30%,
+    rgba(255, 255, 255, .06) 62%,
+    rgba(255, 255, 255, .5) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }
 [data-chat-running] [class*="runningDivider"] { display: none !important; }
 [data-chat-running] [class*="runningIcon"] {
