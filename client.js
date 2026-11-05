@@ -645,7 +645,6 @@ window.__ModuleLoader__.load({
                   className: 'tp-node',
                   'data-status': status,
                   title: (item && item.content) || '',
-                  style: { ['--tp-delay']: (index * 45) + 'ms' },
                 });
               }),
             ),
