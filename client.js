@@ -1,16 +1,13 @@
 /**
  * Client half of the todo-progress HUD.
  *
- * Two seats, one shared snapshot:
- *  - `conversation.input.dock`  → an invisible bridge that reads the session `todos`
- *    and `title` projections through the slot's `useProjection` hook and publishes them
- *    module-locally.
- *  - `shell.overlay`            → the visible HUD, rendered in the frame-wide floating
- *    layer above every column, so it stays fixed at the top while the chat scrolls.
+ * One seat: `conversation.input.dock` under the shipped `todo` id, so the bar replaces
+ * the stock todo panel instead of adding a second one. It reads the session `todos`
+ * projection directly and renders the whole task surface in a single collapsible bar:
+ * header (label, thin track, counter, current step) plus the item list.
  *
- * Features: top progress edge + floating pill (bar, count, milestone lights),
- * click-to-collapse into a ring, session title, red failed nodes (⚠/✗/❌ prefix),
- * and reduced-motion support. Styles use only `--dsw-alias-*` theme tokens.
+ * The last written list is cached per session because the host clears the projection on
+ * every `turn/start`. Styles use only `--dsw-alias-*` theme tokens.
  */
 window.__ModuleLoader__.load({
   id: 'dsh-todo-progress-hud',
@@ -25,60 +22,22 @@ window.__ModuleLoader__.load({
     /** A todo node marked with these leading glyphs is rendered as failed. */
     const FAILED_MARKER = /^[\s]*[⚠✗❌]/u;
 
-    //#region shared snapshot
-    /** Immutable snapshot shared by both seats. */
-    let snapshot = { todos: EMPTY, title: '', sessionId: '' };
-    const listeners = new Set();
+    //#region last known list
     /**
-     * The bridge currently owning the snapshot. A conversation switch can mount the
-     * next bridge before the previous one unmounts; without this guard the leaving
-     * bridge would publish an empty list and blank the HUD in the new conversation.
-     */
-    let activeBridge = null;
-    /**
-     * Host semantics: the `todos` projection resets to null on every `turn/start`.
-     * Remember the last list each session actually wrote so the HUD survives the
-     * gap between a new turn starting and that turn's first `todo_write`.
+     * The host resets the `todos` projection to null on every `turn/start`, which would
+     * blank the bar between a new turn starting and that turn's first `todo_write`.
+     * Keep the last list each session actually wrote and fall back to it while null.
      */
     const lastKnownTodos = new Map();
 
-    function rememberTodos(sessionId, todos) {
-      if (Array.isArray(todos)) {
-        if (todos.length === 0) lastKnownTodos.delete(sessionId);
-        else lastKnownTodos.set(sessionId, todos);
-        return todos;
-      }
-      const cached = lastKnownTodos.get(sessionId);
-      return Array.isArray(cached) ? cached : null;
+    function cacheTodos(sessionId, todos) {
+      if (!Array.isArray(todos)) return;
+      if (todos.length === 0) lastKnownTodos.delete(sessionId);
+      else lastKnownTodos.set(sessionId, todos);
     }
 
-    function publish(todos, title, sessionId) {
-      const nextTodos = Array.isArray(todos) ? todos : EMPTY;
-      const nextTitle = typeof title === 'string' ? title : '';
-      const nextSessionId = typeof sessionId === 'string' ? sessionId : '';
-      if (
-        snapshot.todos === nextTodos &&
-        snapshot.title === nextTitle &&
-        snapshot.sessionId === nextSessionId
-      ) {
-        return;
-      }
-      snapshot = { todos: nextTodos, title: nextTitle, sessionId: nextSessionId };
-      for (const listener of listeners) listener();
-    }
-
-    function subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    }
-
-    /** React hook: current snapshot, re-rendering on every publish. */
-    function useSnapshot() {
-      const [value, setValue] = React.useState(snapshot);
-      React.useEffect(() => subscribe(() => setValue(snapshot)), []);
-      return value;
+    function cachedTodos(sessionId) {
+      return lastKnownTodos.get(sessionId) || EMPTY;
     }
 
     function readCollapsed() {
@@ -98,39 +57,6 @@ window.__ModuleLoader__.load({
     }
     //#endregion
 
-    //#region bridge seat
-    /**
-     * Invisible bridge: `useProjection` is only available on a session-scoped slot,
-     * so this seat forwards the todo list and the session title into the snapshot.
-     */
-    function TodoBridge(props) {
-      const useProjection = props.useProjection;
-      const sessionId = props.sessionId;
-      const todos = typeof useProjection === 'function' ? useProjection('todos') : null;
-      const title = typeof useProjection === 'function' ? useProjection('title') : null;
-      const token = React.useRef(null);
-      if (token.current === null) token.current = {};
-
-      // Claim ownership on mount and release only if still the owner on unmount.
-      React.useEffect(() => {
-        activeBridge = token.current;
-        return () => {
-          if (activeBridge === token.current) {
-            activeBridge = null;
-            publish(null, null, null);
-          }
-        };
-      }, []);
-
-      // Publish projection updates only while this bridge owns the snapshot.
-      React.useEffect(() => {
-        if (activeBridge === token.current) publish(rememberTodos(sessionId, todos), title, sessionId);
-      }, [todos, title, sessionId]);
-
-      return null;
-    }
-    //#endregion
-
     //#region styles
     const CSS = `
 .tp-hud {
@@ -139,47 +65,44 @@ window.__ModuleLoader__.load({
   width: 100%;
   font-family: var(--dsw-font-family, inherit);
 }
-/* One flat row that lives in the composer dock: no shadow, no glass, no float. */
-.tp-card,
-.tp-pill {
-  pointer-events: auto;
+.tp-panel {
+  width: 100%;
+  max-width: var(--dsh-chat-content-width, 748px);
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, .06));
+  overflow: hidden;
+  color: var(--dsw-alias-label-secondary);
+  font-size: calc(var(--dsh-content-font-size, 14px) - 2px);
+  line-height: 1.35;
+  animation: tp-row-in .18s ease-out;
+}
+.tp-panel[data-complete="true"] {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-success-primary) 55%, var(--dsw-alias-border-l1));
+}
+.tp-panel[data-failed="true"] {
+  border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 55%, var(--dsw-alias-border-l1));
+}
+.tp-head {
   display: flex;
   align-items: center;
   gap: .7em;
   width: 100%;
-  max-width: var(--dsh-chat-content-width, 748px);
-  padding: .45em .8em;
-  border-radius: 8px;
-  border: 1px solid var(--dsw-alias-border-l1);
-  background: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, .06));
-  color: var(--dsw-alias-label-secondary);
-  font-size: calc(var(--dsh-content-font-size, 14px) - 2px);
-  line-height: 1.3;
+  padding: .5em .8em;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
-  user-select: none;
-  transition: background .16s ease, border-color .16s ease;
 }
-.tp-card:hover,
-.tp-pill:hover { border-color: var(--dsw-alias-border-l2, var(--dsw-alias-border-l1)); }
-.tp-card[data-complete="true"],
-.tp-pill[data-complete="true"] { border-color: color-mix(in srgb, var(--dsw-alias-state-success-primary) 55%, var(--dsw-alias-border-l1)); }
-.tp-card[data-failed="true"],
-.tp-pill[data-failed="true"] { border-color: color-mix(in srgb, var(--dsw-alias-state-error-primary) 55%, var(--dsw-alias-border-l1)); }
-.tp-card { animation: tp-card-in .18s ease-out; }
-.tp-card[data-leaving="true"] { animation: tp-card-out .12s ease-in forwards; }
-.tp-pill { animation: tp-pill-in .18s ease-out; }
-.tp-pill[data-leaving="true"] { animation: tp-pill-out .12s ease-in forwards; }
-
+.tp-head:hover { background: color-mix(in srgb, var(--dsw-alias-label-secondary) 5%, transparent); }
 .tp-title {
   flex: none;
-  max-width: 11em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: var(--dsw-alias-label-primary);
   font-weight: 500;
 }
-.tp-title[data-empty="true"] { color: var(--dsw-alias-label-tertiary); font-weight: 400; }
 .tp-track {
   position: relative;
   flex: 1 1 auto;
@@ -198,12 +121,14 @@ window.__ModuleLoader__.load({
 .tp-count {
   flex: none;
   font-variant-numeric: tabular-nums;
-  color: var(--dsw-alias-label-secondary);
   transition: color .3s ease;
 }
-.tp-count[data-complete="true"] { color: var(--dsw-alias-state-success-primary); font-weight: 600; }
+.tp-panel[data-complete="true"] .tp-count {
+  color: var(--dsw-alias-state-success-primary);
+  font-weight: 600;
+}
 .tp-current {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -213,55 +138,59 @@ window.__ModuleLoader__.load({
 .tp-chevron {
   flex: none;
   color: var(--dsw-alias-label-tertiary);
-  font-size: .9em;
-  transition: transform .2s ease;
+  font-size: .85em;
 }
-.tp-pill-track {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 60px;
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--dsw-alias-label-secondary) 18%, transparent);
-  overflow: hidden;
+.tp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 .8em .55em;
+  display: flex;
+  flex-direction: column;
+  gap: .3em;
 }
-.tp-pill-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--dsw-alias-brand-primary), var(--dsw-alias-state-success-primary));
-  transition: width .6s cubic-bezier(.3, .9, .35, 1);
+.tp-item {
+  display: flex;
+  align-items: baseline;
+  gap: .55em;
+  min-width: 0;
 }
-.tp-pill-count {
+.tp-dot {
   flex: none;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--dsw-alias-label-secondary);
+  width: .5em;
+  height: .5em;
+  border-radius: 50%;
+  border: 1.2px solid var(--dsw-alias-state-idle-primary);
+  background: transparent;
+  transform: translateY(-1px);
+  transition: background .3s ease, border-color .3s ease;
 }
-.tp-pill[data-complete="true"] .tp-pill-count { color: var(--dsw-alias-state-success-primary); }
-.tp-pill .tp-count,
-.tp-card .tp-count { margin-left: 0; }
-
-@keyframes tp-card-in {
+.tp-item[data-status="completed"] .tp-dot {
+  background: var(--dsw-alias-state-success-primary);
+  border-color: var(--dsw-alias-state-success-primary);
+}
+.tp-item[data-status="in_progress"] .tp-dot {
+  background: var(--dsw-alias-brand-primary);
+  border-color: var(--dsw-alias-brand-primary);
+}
+.tp-item[data-status="failed"] .tp-dot {
+  background: var(--dsw-alias-state-error-primary);
+  border-color: var(--dsw-alias-state-error-primary);
+}
+.tp-item-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-item[data-status="completed"] .tp-item-text { color: var(--dsw-alias-label-tertiary); }
+.tp-item[data-status="failed"] .tp-item-text { color: var(--dsw-alias-state-error-primary); }
+@keyframes tp-row-in {
   from { opacity: 0; }
   to   { opacity: 1; }
-}
-@keyframes tp-card-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
-}
-@keyframes tp-pill-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes tp-pill-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  :root:not([data-tp-motion="full"]) .tp-card,
-  :root:not([data-tp-motion="full"]) .tp-pill { animation: none !important; }
-  :root:not([data-tp-motion="full"]) .tp-fill,
-  :root:not([data-tp-motion="full"]) .tp-pill-fill { transition: width .2s ease; }
+  :root:not([data-tp-motion="full"]) .tp-panel { animation: none !important; }
+  :root:not([data-tp-motion="full"]) .tp-fill { transition: width .2s ease; }
 }
 `;
     //#endregion
@@ -367,15 +296,23 @@ window.__ModuleLoader__.load({
     }
     //#endregion
 
-    //#region HUD seat
+    //#region dock seat
     /**
-     * The visible HUD: a full-width progress edge plus either the expanded pill or the
-     * collapsed ring. Clicking toggles between them; the choice persists in localStorage.
+     * One collapsible bar that owns the whole task surface: the header carries the
+     * progress (label, thin track, counter, current step) and the body lists every item.
+     * It registers under the shipped `todo` id, so it replaces the stock dock panel
+     * instead of stacking a second bar next to it.
      */
-    function TodoHud(props) {
+    function TodoDock(props) {
       const t = props.t;
       const tr = (key) => (typeof t === 'function' ? t(key) : (FALLBACK[key] ?? key));
-      const { todos, title } = useSnapshot();
+      const useProjection = props.useProjection;
+      const sessionId = props.sessionId;
+      const rawTodos = typeof useProjection === 'function' ? useProjection('todos') : null;
+
+      React.useEffect(() => {
+        cacheTodos(sessionId, rawTodos);
+      }, [sessionId, rawTodos]);
 
       // Opt-in escape hatch for hosts whose OS asks for reduced motion but who still
       // want the full effect: localStorage['todo-progress-hud:motion'] = 'full'.
@@ -390,130 +327,87 @@ window.__ModuleLoader__.load({
         else delete document.documentElement.dataset.tpMotion;
       }, []);
 
-      const list = todos || EMPTY;
+      const [collapsed, setCollapsed] = React.useState(readCollapsed);
+      const toggle = React.useCallback(() => {
+        setCollapsed((value) => {
+          writeCollapsed(!value);
+          return !value;
+        });
+      }, []);
+
+      const list = Array.isArray(rawTodos) ? rawTodos : cachedTodos(sessionId);
       const total = list.length;
+      if (total === 0) return null;
 
       let done = 0;
-      let active = null;
       let failed = 0;
+      let active = null;
       for (const item of list) {
         if (!item) continue;
         if (FAILED_MARKER.test(item.content || '')) failed += 1;
         if (item.status === 'completed') done += 1;
         else if (item.status === 'in_progress' && active === null) active = item;
       }
-      const complete = total > 0 && done === total;
-      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-      const [collapsed, setCollapsed] = React.useState(readCollapsed);
-      const [leaving, setLeaving] = React.useState(false);
-      const busy = React.useRef(false);
-      // Play a short exit animation on the current shape, then swap and let the
-      // incoming shape play its entrance: collapse/expand is a morph, not a jump.
-      const toggle = React.useCallback(() => {
-        if (busy.current) return;
-        busy.current = true;
-        setLeaving(true);
-        window.setTimeout(() => {
-          setCollapsed((value) => {
-            writeCollapsed(!value);
-            return !value;
-          });
-          setLeaving(false);
-          busy.current = false;
-        }, 150);
-      }, []);
-
-      // The HUD stays visible for as long as the conversation owns a todo list,
-      // including a fully completed one: an auto-hiding bar reads as "broken"
-      // when the next conversation opens with no visible progress.
-      if (total === 0) return null;
-
-      const titleText = title && title.trim() ? title.trim() : '';
-      const summary = `${titleText || tr('label')} · ${done}/${total}`;
-      const failedCount = failed > 0 ? ' · ' + tr('failed') + ' ' + failed : '';
-      const edgeFailed = failed > 0;
-
-      const styleEl = h('style', { key: 'tp-style' }, CSS);
-      const body = collapsed
-        ? h(
-            'button',
-            {
-              key: 'tp-pill',
-              type: 'button',
-              className: 'tp-pill',
-              'data-failed': edgeFailed ? 'true' : 'false',
-              'data-complete': complete ? 'true' : 'false',
-              'data-leaving': leaving ? 'true' : 'false',
-              title: summary + failedCount + ' · ' + tr('expand'),
-              'aria-label': summary + failedCount,
-              'aria-expanded': false,
-              onClick: toggle,
-            },
-            h(
-              'div',
-              { className: 'tp-pill-track' },
-              h('div', { className: 'tp-pill-fill', style: { width: pct + '%' } }),
-            ),
-            h('span', { className: 'tp-pill-count' }, complete ? '\u2713' : done + '/' + total),
-          )
-        : h(
-            'div',
-            {
-              key: 'tp-card',
-              className: 'tp-card',
-              role: 'button',
-              tabIndex: 0,
-              'data-complete': complete ? 'true' : 'false',
-              'data-failed': edgeFailed ? 'true' : 'false',
-              'data-leaving': leaving ? 'true' : 'false',
-              title: summary + failedCount + ' · ' + tr('collapse'),
-              'aria-label': summary + failedCount,
-              'aria-expanded': true,
-              onClick: toggle,
-              onKeyDown: (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  toggle();
-                }
-              },
-            },
-            h(
-              'span',
-              { className: 'tp-title', 'data-empty': titleText ? 'false' : 'true' },
-              titleText || tr('label'),
-            ),
-            h(
-              'div',
-              {
-                className: 'tp-track',
-                role: 'progressbar',
-                'aria-valuemin': 0,
-                'aria-valuemax': 100,
-                'aria-valuenow': pct,
-              },
-              h('div', { className: 'tp-fill', style: { width: pct + '%' } }),
-            ),
-            h(
-              'span',
-              { key: 'count:' + pct, className: 'tp-count', 'data-complete': complete ? 'true' : 'false' },
-              complete ? tr('done') : done + '/' + total,
-            ),
-            complete
-              ? null
-              : h(
-                  'span',
-                  { className: 'tp-current', title: active ? active.content : '' },
-                  active ? active.content : '',
-                ),
-            h('span', { className: 'tp-chevron', 'aria-hidden': true }, '⌃'),
-          );
+      const complete = done === total;
+      const pct = Math.round((done / total) * 100);
 
       return h(
         React.Fragment,
         null,
-        styleEl,
-        h('div', { key: 'tp-hud', className: 'tp-hud' }, body),
+        h('style', { key: 'tp-style' }, CSS),
+        h(
+          'div',
+          { className: 'tp-hud' },
+          h(
+            'div',
+            {
+              className: 'tp-panel',
+              'data-complete': complete ? 'true' : 'false',
+              'data-failed': failed > 0 ? 'true' : 'false',
+            },
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'tp-head',
+                'aria-expanded': !collapsed,
+                title: complete ? tr('done') : done + '/' + total,
+                onClick: toggle,
+              },
+              h('span', { className: 'tp-title' }, tr('label')),
+              h(
+                'div',
+                {
+                  className: 'tp-track',
+                  role: 'progressbar',
+                  'aria-valuemin': 0,
+                  'aria-valuemax': 100,
+                  'aria-valuenow': pct,
+                },
+                h('div', { className: 'tp-fill', style: { width: pct + '%' } }),
+              ),
+              h('span', { className: 'tp-count' }, complete ? tr('done') : done + '/' + total),
+              complete || !active ? null : h('span', { className: 'tp-current' }, active.content),
+              h('span', { className: 'tp-chevron', 'aria-hidden': true }, collapsed ? '\u2304' : '\u2303'),
+            ),
+            collapsed
+              ? null
+              : h(
+                  'ul',
+                  { className: 'tp-list' },
+                  list.map((item, index) => {
+                    const isFailed = !!item && FAILED_MARKER.test(item.content || '');
+                    const status = isFailed ? 'failed' : (item && item.status) || 'pending';
+                    return h(
+                      'li',
+                      { key: index + ':' + status, className: 'tp-item', 'data-status': status },
+                      h('span', { className: 'tp-dot', 'aria-hidden': true }),
+                      h('span', { className: 'tp-item-text' }, (item && item.content) || ''),
+                    );
+                  }),
+                ),
+          ),
+        ),
       );
     }
     //#endregion
@@ -570,22 +464,13 @@ window.__ModuleLoader__.load({
       ctx.slots.inject('conversation.input.dock', () =>
         ctx.slots.register(
           {
+            // Reusing the shipped cell: one bar with everything in it.
             name: 'conversation.input.dock',
-            id: 'todo-progress-bridge',
-            order: 900,
-          },
-          TodoBridge,
-        ),
-      );
-      ctx.slots.inject('conversation.input.dock', () =>
-        ctx.slots.register(
-          {
-            name: 'conversation.input.dock',
-            id: 'todo-progress-hud',
-            order: 5,
+            id: 'todo',
+            order: 0,
             locale: NS,
           },
-          TodoHud,
+          TodoDock,
         ),
       );
     }
