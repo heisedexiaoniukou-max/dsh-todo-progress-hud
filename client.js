@@ -394,7 +394,7 @@ window.__ModuleLoader__.load({
     0 10px 28px rgba(0, 0, 0, .16);
   animation: tp-run-in .22s ease-out;
 }
-[data-chat-running] [class*="runningDivider"] { display: none; }
+[data-chat-running] [class*="runningDivider"] { display: none !important; }
 [data-chat-running] [class*="runningIcon"] {
   position: relative;
   display: inline-flex;
@@ -427,11 +427,12 @@ window.__ModuleLoader__.load({
     function trimRunningEllipsis() {
       const nodes = document.querySelectorAll('[data-chat-running] [class*="runningText"]');
       for (const node of nodes) {
-        for (const child of Array.from(node.childNodes)) {
-          if (child.nodeType === 3) {
-            const next = child.nodeValue.replace(/\s*·{3}\s*$/, '');
-            if (next !== child.nodeValue) child.nodeValue = next;
-          }
+        const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+        let text = walker.nextNode();
+        while (text !== null) {
+          const next = text.nodeValue.replace(/\s*·{3}\s*$/, '');
+          if (next !== text.nodeValue) text.nodeValue = next;
+          text = walker.nextNode();
         }
       }
     }
@@ -662,8 +663,9 @@ window.__ModuleLoader__.load({
             trimRunningEllipsis();
           });
         };
+        const root = document.body || document.documentElement;
         const observer = new MutationObserver(schedule);
-        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        if (root) observer.observe(root, { childList: true, subtree: true, characterData: true });
         return () => {
           observer.disconnect();
           if (frame !== 0) window.cancelAnimationFrame(frame);
