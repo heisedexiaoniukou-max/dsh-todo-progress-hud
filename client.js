@@ -472,6 +472,93 @@ window.__ModuleLoader__.load({
 `;
     //#endregion
 
+    //#region running pill
+    /**
+     * Restyle the built-in "deep diving" row into a compact floating pill: the class
+     * names are content-hashed by the owning plugin, so every selector anchors on
+     * the stable `data-chat-running` attribute plus a class-name substring.
+     */
+    const RUNNING_CSS = `
+[data-chat-running] {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 4px 0 10px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  background: var(--dsw-alias-bg-overlay);
+  border: 1px solid var(--dsw-alias-border-l1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 12px;
+  line-height: 1;
+  overflow: hidden;
+  position: relative;
+  animation: tp-run-in .3s cubic-bezier(.34, 1.4, .64, 1);
+}
+[data-chat-running] [class*="runningDivider"] { display: none; }
+[data-chat-running] [class*="runningIcon"] { display: none; }
+[data-chat-running] [class*="runningContent"] { gap: 8px; align-items: center; }
+[data-chat-running] [class*="runningContent"]::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dsw-alias-brand-primary);
+  animation: tp-run-breathe 1.6s ease-in-out infinite;
+}
+[data-chat-running] [class*="runningText"] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+  color: var(--dsw-alias-label-secondary);
+}
+[data-chat-running]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .22) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: tp-run-sheen 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes tp-run-in {
+  0%   { opacity: 0; transform: translateY(-4px) scale(.94); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes tp-run-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, .55); transform: scale(1); }
+  50%      { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0); transform: scale(.86); }
+}
+@keyframes tp-run-sheen {
+  0%   { transform: translateX(-100%); }
+  55%  { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-tp-motion="full"]) [data-chat-running],
+  :root:not([data-tp-motion="full"]) [data-chat-running] [class*="runningContent"]::before,
+  :root:not([data-tp-motion="full"]) [data-chat-running]::after { animation: none !important; }
+}
+`;
+
+    /** Drop the trailing "···" the built-in label appends, keeping the pill tidy. */
+    function trimRunningEllipsis() {
+      const nodes = document.querySelectorAll('[data-chat-running] [class*="runningText"]');
+      for (const node of nodes) {
+        for (const child of Array.from(node.childNodes)) {
+          if (child.nodeType === 3) {
+            const next = child.nodeValue.replace(/\s*·{3}\s*$/, '');
+            if (next !== child.nodeValue) child.nodeValue = next;
+          }
+        }
+      }
+    }
+    //#endregion
+
     //#region HUD seat
     /**
      * The visible HUD: a full-width progress edge plus either the expanded pill or the
@@ -677,6 +764,34 @@ window.__ModuleLoader__.load({
           }),
         'todo-progress-hud: dictionaries',
       );
+      ctx.effect(() => {
+        const tag = document.createElement('style');
+        tag.dataset.dshPlugin = 'dsh-todo-progress-hud/running-pill';
+        tag.textContent = RUNNING_CSS;
+        document.head.appendChild(tag);
+        return () => {
+          tag.remove();
+        };
+      }, 'todo-progress-hud:running-pill-css');
+
+      ctx.effect(() => {
+        trimRunningEllipsis();
+        let frame = 0;
+        const schedule = () => {
+          if (frame !== 0) return;
+          frame = window.requestAnimationFrame(() => {
+            frame = 0;
+            trimRunningEllipsis();
+          });
+        };
+        const observer = new MutationObserver(schedule);
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        return () => {
+          observer.disconnect();
+          if (frame !== 0) window.cancelAnimationFrame(frame);
+        };
+      }, 'todo-progress-hud:running-pill-trim');
+
       ctx.slots.inject('conversation.input.dock', () =>
         ctx.slots.register(
           {
