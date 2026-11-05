@@ -1,6 +1,6 @@
 {
   "name": "dsh-todo-progress-hud",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "type": "module",
   "description": "任务进度条 for DeepSeek Harness：把会话的 todo 清单变成输入框上方一条常驻进度条，实时显示完成度、当前步骤与每一项状态。",
   "keywords": [

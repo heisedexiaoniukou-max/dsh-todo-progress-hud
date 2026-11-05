@@ -40,6 +40,31 @@ window.__ModuleLoader__.load({
       return lastKnownTodos.get(sessionId) || EMPTY;
     }
 
+    /**
+     * Whether the conversation is inside a running turn. The host blanks the `todos`
+     * projection between turns; without this signal a stale list would keep the bar
+     * visible after the conversation already finished.
+     */
+    function useChatRunning() {
+      const probe = () => (typeof document === 'undefined' ? false : !!document.querySelector('[data-chat-running]'));
+      const [running, setRunning] = React.useState(probe);
+      React.useEffect(() => {
+        const check = () => setRunning(probe());
+        const root = document.body || document.documentElement;
+        if (!root) return undefined;
+        const observer = new MutationObserver(check);
+        observer.observe(root, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ['data-chat-running'],
+        });
+        check();
+        return () => observer.disconnect();
+      }, []);
+      return running;
+    }
+
     function readCollapsed() {
       try {
         return window.localStorage.getItem(STORAGE_KEY) === '1';
@@ -343,7 +368,10 @@ window.__ModuleLoader__.load({
         });
       }, []);
 
-      const list = Array.isArray(rawTodos) ? rawTodos : cachedTodos(sessionId);
+      const running = useChatRunning();
+      // Between turns the projection is null on purpose: show the remembered list only
+      // while a turn is running, otherwise the bar would outlive the conversation.
+      const list = Array.isArray(rawTodos) ? rawTodos : running ? cachedTodos(sessionId) : EMPTY;
       const total = list.length;
       if (total === 0) return null;
 
