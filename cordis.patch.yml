@@ -1,0 +1,3 @@
+- insert:
+    - id: todo-progress-hud
+      name: 'dsh-todo-progress-hud'
