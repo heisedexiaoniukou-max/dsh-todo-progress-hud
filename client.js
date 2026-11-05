@@ -136,7 +136,7 @@ window.__ModuleLoader__.load({
 .tp-hud {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: calc(var(--dsh-composer-height, 152px) + 16px);
   z-index: 40;
   display: flex;
   flex-direction: column;
