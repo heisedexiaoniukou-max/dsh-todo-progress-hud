@@ -679,7 +679,12 @@ window.__ModuleLoader__.load({
      * Registers the bridge seat and the HUD seat.
      * @param ctx - Client root context.
      */
+    /** Build marker: lets the browser tell which bundle it actually loaded. */
+    const BUILD = '1.7.4';
+
     function apply(ctx) {
+      if (typeof window !== 'undefined') window.__TP_HUD = { build: BUILD };
+
       ctx.effect(
         () =>
           ctx.locale.register(NS, {
