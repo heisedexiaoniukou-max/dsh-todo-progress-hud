@@ -135,40 +135,20 @@ window.__ModuleLoader__.load({
     const CSS = `
 .tp-hud {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  right: 16px;
+  bottom: 16px;
   z-index: 40;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: flex-end;
   pointer-events: none;
   font-family: var(--dsw-font-family, inherit);
 }
-.tp-edge {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--dsw-alias-bg-layer-2);
-  overflow: hidden;
-  pointer-events: none;
-}
-.tp-edge-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--dsw-alias-brand-primary), var(--dsw-alias-state-success-primary));
-  transition: width .6s cubic-bezier(.3, .9, .35, 1);
-}
-.tp-edge[data-failed="true"] .tp-edge-fill {
-  background: linear-gradient(90deg, var(--dsw-alias-state-error-primary), var(--dsw-alias-state-warn-primary));
-}
-
 /* ---- liquid glass surface shared by the card and the collapsed pill ---- */
 .tp-card,
 .tp-pill {
   pointer-events: auto;
   position: relative;
-  margin-top: 8px;
   display: inline-flex;
   align-items: center;
   width: fit-content;
@@ -553,16 +533,6 @@ window.__ModuleLoader__.load({
       const edgeFailed = failed > 0;
 
       const styleEl = h('style', { key: 'tp-style' }, CSS);
-      const edge = h(
-        'div',
-        {
-          key: 'tp-edge',
-          className: 'tp-edge',
-          'data-failed': edgeFailed ? 'true' : 'false',
-        },
-        h('div', { className: 'tp-edge-fill', style: { width: pct + '%' } }),
-      );
-
       const miniNodes = list.map((item, index) => {
         const isFailed = !!item && FAILED_MARKER.test(item.content || '');
         const status = isFailed ? 'failed' : (item && item.status) || 'pending';
@@ -667,7 +637,6 @@ window.__ModuleLoader__.load({
         React.Fragment,
         null,
         styleEl,
-        edge,
         h('div', { key: 'tp-hud', className: 'tp-hud' }, body),
       );
     }
