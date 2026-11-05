@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Task Progress HUD",
+    "description": "Floating top-of-chat progress bar with milestone lights, driven by the session todo list."
+  }
+}
